@@ -7,52 +7,52 @@ Developers can select multiple alerts deemed safe based on the AI's evaluation a
 
 ## 2. System Architecture & Tech Stack
 
-*   **Architecture:** Lightweight desktop app using Tauri v2
-*   **Frontend (Webview):** React, TypeScript, Vite
-    *   UI Library: Tailwind CSS, shadcn/ui
-    *   State Management & API Integration: TanStack Query
-    *   AI Integration: Vercel AI SDK (`@ai-sdk/react` for Tool Calling and Streaming)
-*   **Backend (Core):** Tauri (Rust)
-    *   Command Execution: `std::process::Command` (calling `gh cli`, `git`)
-    *   File Operations: `std::fs` (File reading/searching in response to AI requests)
-    *   Local DB: SQLite (for local caching)
-*   **External Integrations:**
-    *   GitHub: `gh cli` (Authentication/Clone) / GitHub REST API (Bulk alert fetching/Dismissing)
-    *   AI: Any LLM for which the user inputs an API key (OpenAI, Anthropic, Gemini, etc.)
+- **Architecture:** Lightweight desktop app using Tauri v2
+- **Frontend (Webview):** React, TypeScript, Vite
+  - UI Library: Tailwind CSS, shadcn/ui
+  - State Management & API Integration: TanStack Query
+  - AI Integration: Vercel AI SDK (`@ai-sdk/react` for Tool Calling and Streaming)
+- **Backend (Core):** Tauri (Rust)
+  - Command Execution: `std::process::Command` (calling `gh cli`, `git`)
+  - File Operations: `std::fs` (File reading/searching in response to AI requests)
+  - Local DB: SQLite (for local caching)
+- **External Integrations:**
+  - GitHub: `gh cli` (Authentication/Clone) / GitHub REST API (Bulk alert fetching/Dismissing)
+  - AI: Any LLM for which the user inputs an API key (OpenAI, Anthropic, Gemini, etc.)
 
 ## 3. Core Feature Requirements
 
 ### 3.1. Authentication and GitHub Access Control
 
-*   **Delegation to `gh cli`:** Authentication is primarily handled by `gh cli`. Check `gh auth status` at app startup.
-*   **Permission Verification & Dynamic Update:** Verify required scopes (`repo`, `read:org`, `security_events`) during API requests. If insufficient, guide the user via UI to run `gh auth login --scopes security_events`, allowing easy copy-paste for token updates.
-*   **Fallback:** Provide a function for manual PAT (Personal Access Token) entry.
+- **Delegation to `gh cli`:** Authentication is primarily handled by `gh cli`. Check `gh auth status` at app startup.
+- **Permission Verification & Dynamic Update:** Verify required scopes (`repo`, `read:org`, `security_events`) during API requests. If insufficient, guide the user via UI to run `gh auth login --scopes security_events`, allowing easy copy-paste for token updates.
+- **Fallback:** Provide a function for manual PAT (Personal Access Token) entry.
 
 ### 3.2. Scope Selection and Alert Listing (Optimized)
 
-*   **Organization-level Fetching:** Use endpoints like `GET /orgs/{org}/dependabot/alerts` to efficiently fetch all alerts within a selected Organization (or User). Avoid API rate limits.
-*   **Filtering and Sorting:** Enable local filtering by severity, repository, specific package names, etc.
-*   **Local Cache:** Save fetch results to SQLite to achieve fast display on next startup and save API calls.
+- **Organization-level Fetching:** Use endpoints like `GET /orgs/{org}/dependabot/alerts` to efficiently fetch all alerts within a selected Organization (or User). Avoid API rate limits.
+- **Filtering and Sorting:** Enable local filtering by severity, repository, specific package names, etc.
+- **Local Cache:** Save fetch results to SQLite to achieve fast display on next startup and save API calls.
 
 ### 3.3. Autonomous Code Evaluation by AI (Agentic AI)
 
 Evaluate by giving the AI "tools (permissions)" to explore the repository without prior data processing.
 
-*   **On-demand Clone:**
-    *   Only when a user executes "AI Evaluation", if the target repository is not cloned or is outdated, execute `gh repo clone <repo> -- --depth 1` (or `git fetch & reset`) in a temporary directory.
-*   **Leveraging Vercel AI SDK (Tool Calling):**
-    *   Provide the following tools (functions executed on the Rust side) to the AI:
-        1.  `list_directory(path)`: Check file structure within a directory.
-        2.  `read_file(path)`: Read the content of an arbitrary file (source code, `package-lock.json`, etc.).
-        3.  `search_text(query, path)`: Search for specific strings (function calls, package names) within the repository.
-*   **Evaluation Process:**
-    *   The AI receives only "vulnerability information" and "root directory structure" as initial information, and autonomously calls tools to investigate dependencies and code usage.
-    *   The investigation results and the conclusion on threat level (e.g., "Low threat because it is not directly called") are streamed to the UI.
+- **On-demand Clone:**
+  - Only when a user executes "AI Evaluation", if the target repository is not cloned or is outdated, execute `gh repo clone <repo> -- --depth 1` (or `git fetch & reset`) in a temporary directory.
+- **Leveraging Vercel AI SDK (Tool Calling):**
+  - Provide the following tools (functions executed on the Rust side) to the AI:
+    1.  `list_directory(path)`: Check file structure within a directory.
+    2.  `read_file(path)`: Read the content of an arbitrary file (source code, `package-lock.json`, etc.).
+    3.  `search_text(query, path)`: Search for specific strings (function calls, package names) within the repository.
+- **Evaluation Process:**
+  - The AI receives only "vulnerability information" and "root directory structure" as initial information, and autonomously calls tools to investigate dependencies and code usage.
+  - The investigation results and the conclusion on threat level (e.g., "Low threat because it is not directly called") are streamed to the UI.
 
 ### 3.4. Bulk Dismiss Functionality
 
-*   **Multi-selection Processing:** A feature to select multiple alerts on the data grid and dismiss them in bulk.
-*   **Automatic AI Evaluation Integration:** When dismissing alerts evaluated as "No Threat (Safe)" by AI, automatically insert the AI's evaluation reason as `dismissed_comment` and execute the API (`PATCH`) asynchronously in parallel to close with an appropriate reason (e.g., `not_used`).
+- **Multi-selection Processing:** A feature to select multiple alerts on the data grid and dismiss them in bulk.
+- **Automatic AI Evaluation Integration:** When dismissing alerts evaluated as "No Threat (Safe)" by AI, automatically insert the AI's evaluation reason as `dismissed_comment` and execute the API (`PATCH`) asynchronously in parallel to close with an appropriate reason (e.g., `not_used`).
 
 ## 4. User Workflow (Operation Scenario)
 
