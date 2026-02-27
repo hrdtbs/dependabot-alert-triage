@@ -10,17 +10,17 @@
 ## Phase 2: Backend Core (Rust)
 
 - [ ] **Authentication Module:**
-  - [ ] Implement wrapper for `gh auth status` command.
-  - [ ] Implement logic to verify current scopes (`repo`, `read:org`, `security_events`).
+  - [x] Implement wrapper for `gh auth status` command.
+  - [x] Implement logic to verify current scopes (`repo`, `read:org`, `security_events`).
   - [ ] Handle missing scopes and generate `gh auth login` command strings for the user.
 - [ ] **Data Persistence (SQLite):**
   - [ ] Set up SQLite connection and schema migration strategy.
   - [ ] Define tables for storing Alert data and Cache metadata.
 - [ ] **File System & Command Execution:**
   - [ ] Implement secure `std::process::Command` wrapper for `git` and `gh` operations.
-  - [ ] Implement `list_directory` command (Tool for AI).
-  - [ ] Implement `read_file` command (Tool for AI).
-  - [ ] Implement `search_text` command (Tool for AI - e.g., using `grep` or `ripgrep`).
+  - [x] Implement `list_directory` command (Tool for AI).
+  - [x] Implement `read_file` command (Tool for AI).
+  - [x] Implement `search_text` command (Tool for AI - e.g., using `grep` or `ripgrep`).
 
 ## Phase 3: Frontend Foundation
 

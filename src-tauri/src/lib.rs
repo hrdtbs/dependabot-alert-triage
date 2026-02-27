@@ -1,4 +1,11 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+pub mod filesystem;
+pub mod github;
+pub mod core_filesystem; // Expose core modules
+pub mod core_github;
+
+#[cfg(test)]
+mod tests;
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -8,7 +15,13 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            filesystem::list_directory,
+            filesystem::read_file,
+            filesystem::search_text,
+            github::check_gh_auth_status,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
