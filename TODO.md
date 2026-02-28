@@ -12,7 +12,7 @@
 - [ ] **Authentication Module:**
   - [x] Implement wrapper for `gh auth status` command.
   - [x] Implement logic to verify current scopes (`repo`, `read:org`, `security_events`).
-  - [ ] Handle missing scopes and generate `gh auth login` command strings for the user.
+  - [x] Handle missing scopes and generate `gh auth login` command strings for the user.
 - [ ] **Data Persistence (SQLite):**
   - [ ] Set up SQLite connection and schema migration strategy.
   - [ ] Define tables for storing Alert data and Cache metadata.
