@@ -1,0 +1,25 @@
+name: Run Jules AI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-jules:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-labs-code/jules-action@v1
+        with:
+          prompt: |
+            1. SPEC.mdとTODO.mdを閲覧
+            2. タスクを決定
+            3. 実行
+            4. 検証
+            5. TODO.mdを更新
+          jules_api_key: ${{ secrets.GITHUB_SECRET }}
