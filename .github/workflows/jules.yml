@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-labs-code/jules-invoke@v1
+      - uses: google-labs-code/jules-invoke@v1.0.0
         with:
           prompt: |
             1. SPEC.mdとTODO.mdを閲覧
