@@ -14,8 +14,8 @@
   - [x] Implement logic to verify current scopes (`repo`, `read:org`, `security_events`).
   - [x] Handle missing scopes and generate `gh auth login` command strings for the user.
 - [ ] **Data Persistence (SQLite):**
-  - [ ] Set up SQLite connection and schema migration strategy.
-  - [ ] Define tables for storing Alert data and Cache metadata.
+  - [x] Set up SQLite connection and schema migration strategy.
+  - [x] Define tables for storing Alert data and Cache metadata.
 - [ ] **File System & Command Execution:**
   - [ ] Implement secure `std::process::Command` wrapper for `git` and `gh` operations.
   - [x] Implement `list_directory` command (Tool for AI).
