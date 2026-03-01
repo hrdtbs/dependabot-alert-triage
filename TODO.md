@@ -17,7 +17,7 @@
   - [x] Set up SQLite connection and schema migration strategy.
   - [x] Define tables for storing Alert data and Cache metadata.
 - [ ] **File System & Command Execution:**
-  - [ ] Implement secure `std::process::Command` wrapper for `git` and `gh` operations.
+  - [x] Implement secure `std::process::Command` wrapper for `git` and `gh` operations.
   - [x] Implement `list_directory` command (Tool for AI).
   - [x] Implement `read_file` command (Tool for AI).
   - [x] Implement `search_text` command (Tool for AI - e.g., using `grep` or `ripgrep`).
