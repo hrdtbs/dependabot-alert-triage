@@ -3,6 +3,7 @@ pub mod github;
 pub mod core_filesystem; // Expose core modules
 pub mod core_github;
 pub mod core_db;
+pub mod core_process;
 
 #[cfg(test)]
 mod tests;

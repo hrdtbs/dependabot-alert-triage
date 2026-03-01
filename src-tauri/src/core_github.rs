@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use crate::core_process::SecureCommand;
 use anyhow::{Result, Context};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,11 +12,11 @@ pub struct AuthStatus {
 }
 
 pub fn check_gh_auth_status() -> Result<AuthStatus> {
-    if Command::new("gh").arg("--version").output().is_err() {
+    if SecureCommand::new("gh")?.arg("--version").output().is_err() {
         return Err(anyhow::anyhow!("GitHub CLI (gh) is not installed or not in PATH"));
     }
 
-    let output = Command::new("gh")
+    let output = SecureCommand::new("gh")?
         .args(&["api", "/", "--include"])
         .output()
         .context("Failed to execute gh command")?;
@@ -63,7 +63,7 @@ pub fn check_gh_auth_status() -> Result<AuthStatus> {
         None
     };
 
-    let user_output = Command::new("gh")
+    let user_output = SecureCommand::new("gh")?
         .args(&["api", "user", "--jq", ".login"])
         .output();
 
