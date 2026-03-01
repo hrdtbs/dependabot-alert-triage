@@ -9,8 +9,7 @@ jobs:
   run-jules:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -22,4 +21,4 @@ jobs:
             3. 実行
             4. 検証
             5. TODO.mdを更新
-          jules_api_key: ${{ secrets.GITHUB_SECRET }}
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
