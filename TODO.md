@@ -33,9 +33,9 @@
 
 ## Phase 4: Data Integration (GitHub API)
 
-- [ ] **Organization & User Scope:**
-  - [ ] Implement fetching logic for User's Organizations.
-  - [ ] Create Sidebar UI for selecting the active scope.
+- [x] **Organization & User Scope:**
+  - [x] Implement fetching logic for User's Organizations.
+  - [x] Create Sidebar UI for selecting the active scope.
 - [ ] **Alerts Fetching:**
   - [ ] Implement `GET /orgs/{org}/dependabot/alerts` (handling pagination).
   - [ ] Store fetched alerts in SQLite cache.

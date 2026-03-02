@@ -85,3 +85,18 @@ pub fn check_gh_auth_status() -> Result<AuthStatus> {
         login_command,
     })
 }
+
+pub fn fetch_user_organizations() -> Result<Vec<String>> {
+    let output = crate::core_cmd::run_gh(&["api", "user/orgs", "--jq", ".[].login"], None)?;
+    let orgs = output
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    Ok(orgs)
+}
+
+pub fn fetch_user() -> Result<String> {
+    let output = crate::core_cmd::run_gh(&["api", "user", "--jq", ".login"], None)?;
+    Ok(output.trim().to_string())
+}
