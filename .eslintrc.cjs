@@ -7,7 +7,7 @@ module.exports = {
     "plugin:react-hooks/recommended",
     "prettier",
   ],
-  ignorePatterns: ["dist", ".eslintrc.cjs", "src-tauri"],
+  ignorePatterns: ["dist", ".eslintrc.cjs", "src-tauri", "src/components/ui"],
   parser: "@typescript-eslint/parser",
   plugins: ["react-refresh"],
   rules: {
