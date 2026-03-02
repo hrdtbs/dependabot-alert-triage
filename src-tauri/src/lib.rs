@@ -24,6 +24,8 @@ pub fn run() {
             filesystem::read_file,
             filesystem::search_text,
             github::check_gh_auth_status,
+            github::fetch_user_organizations,
+            github::fetch_user,
             cmd::run_git,
             cmd::run_gh,
         ])
