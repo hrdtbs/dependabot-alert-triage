@@ -1,8 +1,10 @@
 pub mod filesystem;
 pub mod github;
+pub mod cmd;
 pub mod core_filesystem; // Expose core modules
 pub mod core_github;
 pub mod core_db;
+pub mod core_cmd;
 
 #[cfg(test)]
 mod tests;
@@ -22,6 +24,8 @@ pub fn run() {
             filesystem::read_file,
             filesystem::search_text,
             github::check_gh_auth_status,
+            cmd::run_git,
+            cmd::run_gh,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
