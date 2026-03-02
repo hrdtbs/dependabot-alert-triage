@@ -24,12 +24,12 @@
 
 ## Phase 3: Frontend Foundation
 
-- [ ] **App Layout:**
-  - [ ] Create main shell with Sidebar (Org selection) and Main Content Area.
-  - [ ] Implement "Settings" view for AI API Key management.
-- [ ] **State Management:**
-  - [ ] Setup TanStack Query for data fetching and caching.
-  - [ ] specific stores (Zustand or Context) for User Auth state and UI state.
+- [x] **App Layout:**
+  - [x] Create main shell with Sidebar (Org selection) and Main Content Area.
+  - [x] Implement "Settings" view for AI API Key management.
+- [x] **State Management:**
+  - [x] Setup TanStack Query for data fetching and caching.
+  - [x] specific stores (Zustand or Context) for User Auth state and UI state.
 
 ## Phase 4: Data Integration (GitHub API)
 
