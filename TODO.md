@@ -36,13 +36,13 @@
 - [x] **Organization & User Scope:**
   - [x] Implement fetching logic for User's Organizations.
   - [x] Create Sidebar UI for selecting the active scope.
-- [ ] **Alerts Fetching:**
-  - [ ] Implement `GET /orgs/{org}/dependabot/alerts` (handling pagination).
-  - [ ] Store fetched alerts in SQLite cache.
-  - [ ] Implement logic to display cached data immediately while refreshing in background.
-- [ ] **Alert List UI:**
-  - [ ] Create Data Grid for displaying alerts.
-  - [ ] Add filtering (Severity, Package Name, Repo) and Sorting.
+- [x] **Alerts Fetching:**
+  - [x] Implement `GET /orgs/{org}/dependabot/alerts` (handling pagination).
+  - [x] Store fetched alerts in SQLite cache.
+  - [x] Implement logic to display cached data immediately while refreshing in background.
+- [x] **Alert List UI:**
+  - [x] Create Data Grid for displaying alerts.
+  - [x] Add filtering (Severity, Package Name, Repo) and Sorting.
 
 ## Phase 5: AI Integration (Agentic Workflow)
 
