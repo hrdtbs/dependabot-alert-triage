@@ -7,6 +7,8 @@ pub mod core_db;
 pub mod core_cmd;
 pub mod core_alerts;
 pub mod alerts;
+pub mod core_repo;
+pub mod repo;
 
 #[cfg(test)]
 mod tests;
@@ -39,6 +41,7 @@ pub fn run() {
             cmd::run_gh,
             alerts::get_cached_alerts,
             alerts::sync_alerts,
+            repo::clone_repo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

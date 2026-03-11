@@ -49,8 +49,8 @@
 - [ ] **Vercel AI SDK Setup:**
   - [ ] Configure `useChat` / `useCompletion` with custom API key support.
   - [ ] Bridge Frontend AI SDK tool calls to Backend Rust commands.
-- [ ] **Repository Management:**
-  - [ ] Implement "On-demand Shallow Clone" logic in Rust (check cache -> clone/fetch).
+- [x] **Repository Management:**
+  - [x] Implement "On-demand Shallow Clone" logic in Rust (check cache -> clone/fetch).
 - [ ] **Agent Logic:**
   - [ ] Define the system prompt for the Triage Agent.
   - [ ] Connect `list_directory`, `read_file`, `search_text` tools to the Agent.
