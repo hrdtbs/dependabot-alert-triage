@@ -57,7 +57,7 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
 
     // Phase 3: LLM Evaluation
     const llmEvaluation = await evaluateWithLlm(
-      config.llmApiKey,
+      options.model,
       alert,
       codeSearch
     );

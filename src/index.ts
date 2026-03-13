@@ -21,12 +21,18 @@ program
     "EPSS score threshold for High risk",
     "0.05"
   )
+  .option(
+    "-m, --model <provider:model>",
+    "LLM model (e.g. anthropic:claude-sonnet-4-20250514, openai:gpt-4o, google:gemini-2.0-flash)",
+    "anthropic:claude-sonnet-4-20250514"
+  )
   .action(async (options) => {
     await scanCommand({
       repo: options.repo,
       format: options.format as "table" | "json",
       limit: parseInt(options.limit, 10),
       epssThreshold: parseFloat(options.epssThreshold),
+      model: options.model,
     });
   });
 

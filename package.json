@@ -14,10 +14,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/openai": "^3.0.41",
     "@octokit/rest": "^21.1.1",
+    "ai": "^6.0.116",
     "cli-table3": "^0.6.5",
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

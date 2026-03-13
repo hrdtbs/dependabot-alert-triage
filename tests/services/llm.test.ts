@@ -1,13 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Anthropic before importing the module
-vi.mock("@anthropic-ai/sdk", () => {
-  return {
-    default: vi.fn(),
-  };
-});
+// Mock the AI SDK modules
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+  Output: {
+    object: vi.fn((opts: unknown) => opts),
+  },
+  createProviderRegistry: vi.fn(() => ({
+    languageModel: vi.fn(() => "mock-model"),
+  })),
+}));
 
-import Anthropic from "@anthropic-ai/sdk";
+vi.mock("@ai-sdk/anthropic", () => ({
+  anthropic: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/openai", () => ({
+  openai: vi.fn(),
+}));
+
+vi.mock("@ai-sdk/google", () => ({
+  google: vi.fn(),
+}));
+
+import { generateText } from "ai";
 import { evaluateWithLlm } from "../../src/services/llm.js";
 import type { AlertInfo, CodeSearchResult } from "../../src/types.js";
 
@@ -38,27 +54,19 @@ describe("evaluateWithLlm", () => {
   });
 
   it("parses valid LLM response", async () => {
-    const mockCreate = vi.fn().mockResolvedValue({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            reachability: "High",
-            context: "Production",
-            reasoning: "lodashのmergeが直接呼び出されている",
-          }),
-        },
-      ],
-    });
+    vi.mocked(generateText).mockResolvedValue({
+      output: {
+        reachability: "High",
+        context: "Production",
+        reasoning: "lodashのmergeが直接呼び出されている",
+      },
+    } as never);
 
-    vi.mocked(Anthropic).mockImplementation(
-      () =>
-        ({
-          messages: { create: mockCreate },
-        }) as unknown as Anthropic
+    const result = await evaluateWithLlm(
+      "anthropic:claude-sonnet-4-20250514",
+      mockAlert,
+      mockCodeSearch
     );
-
-    const result = await evaluateWithLlm("test-key", mockAlert, mockCodeSearch);
 
     expect(result).toEqual({
       reachability: "High",
@@ -67,58 +75,48 @@ describe("evaluateWithLlm", () => {
     });
   });
 
-  it("returns fallback when LLM response is invalid JSON", async () => {
-    const mockCreate = vi.fn().mockResolvedValue({
-      content: [{ type: "text", text: "This is not JSON" }],
-    });
+  it("returns fallback when output is null", async () => {
+    vi.mocked(generateText).mockResolvedValue({
+      output: null,
+    } as never);
 
-    vi.mocked(Anthropic).mockImplementation(
-      () =>
-        ({
-          messages: { create: mockCreate },
-        }) as unknown as Anthropic
+    const result = await evaluateWithLlm(
+      "anthropic:claude-sonnet-4-20250514",
+      mockAlert,
+      mockCodeSearch
     );
-
-    const result = await evaluateWithLlm("test-key", mockAlert, mockCodeSearch);
 
     expect(result.reachability).toBe("Medium");
     expect(result.context).toBe("Production");
   });
 
   it("returns fallback when API call fails", async () => {
-    const mockCreate = vi.fn().mockRejectedValue(new Error("API error"));
+    vi.mocked(generateText).mockRejectedValue(new Error("API error"));
 
-    vi.mocked(Anthropic).mockImplementation(
-      () =>
-        ({
-          messages: { create: mockCreate },
-        }) as unknown as Anthropic
+    const result = await evaluateWithLlm(
+      "anthropic:claude-sonnet-4-20250514",
+      mockAlert,
+      mockCodeSearch
     );
-
-    const result = await evaluateWithLlm("test-key", mockAlert, mockCodeSearch);
 
     expect(result.reachability).toBe("Medium");
     expect(result.context).toBe("Production");
   });
 
-  it("handles response wrapped in markdown code fence", async () => {
-    const mockCreate = vi.fn().mockResolvedValue({
-      content: [
-        {
-          type: "text",
-          text: '```json\n{"reachability": "Low", "context": "Test", "reasoning": "テストコードでのみ使用"}\n```',
-        },
-      ],
-    });
+  it("works with different model providers", async () => {
+    vi.mocked(generateText).mockResolvedValue({
+      output: {
+        reachability: "Low",
+        context: "Test",
+        reasoning: "テストコードでのみ使用",
+      },
+    } as never);
 
-    vi.mocked(Anthropic).mockImplementation(
-      () =>
-        ({
-          messages: { create: mockCreate },
-        }) as unknown as Anthropic
+    const result = await evaluateWithLlm(
+      "openai:gpt-4o",
+      mockAlert,
+      mockCodeSearch
     );
-
-    const result = await evaluateWithLlm("test-key", mockAlert, mockCodeSearch);
 
     expect(result).toEqual({
       reachability: "Low",

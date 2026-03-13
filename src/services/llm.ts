@@ -1,17 +1,28 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type {
-  AlertInfo,
-  CodeSearchResult,
-  LlmEvaluation,
-  Reachability,
-  CodeContext,
-} from "../types.js";
+import { generateText, Output } from "ai";
+import { createProviderRegistry } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
+import { z } from "zod/v4";
+import type { AlertInfo, CodeSearchResult, LlmEvaluation } from "../types.js";
 
 const FALLBACK_EVALUATION: LlmEvaluation = {
   reachability: "Medium",
   context: "Production",
   reasoning: "LLM解析に失敗したため、安全側に倒してデフォルト値を使用",
 };
+
+const registry = createProviderRegistry({
+  anthropic,
+  openai,
+  google,
+});
+
+const evaluationSchema = z.object({
+  reachability: z.enum(["High", "Medium", "Low"]),
+  context: z.enum(["Production", "Development", "Test"]),
+  reasoning: z.string(),
+});
 
 function buildPrompt(alert: AlertInfo, codeSearch: CodeSearchResult): string {
   const snippetsText =
@@ -42,64 +53,30 @@ ${snippetsText}
 }`;
 }
 
-function isValidReachability(value: string): value is Reachability {
-  return ["High", "Medium", "Low"].includes(value);
-}
-
-function isValidContext(value: string): value is CodeContext {
-  return ["Production", "Development", "Test"].includes(value);
-}
-
-function parseResponse(text: string): LlmEvaluation | null {
-  // Extract JSON from response (may contain markdown fences)
-  const jsonMatch = text.match(/\{[\s\S]*?\}/);
-  if (!jsonMatch) return null;
-
-  try {
-    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
-
-    const reachability = String(parsed.reachability ?? "");
-    const context = String(parsed.context ?? "");
-    const reasoning = String(parsed.reasoning ?? "");
-
-    if (!isValidReachability(reachability) || !isValidContext(context)) {
-      return null;
-    }
-
-    return { reachability, context, reasoning };
-  } catch {
-    return null;
-  }
-}
-
 export async function evaluateWithLlm(
-  apiKey: string,
+  modelId: string,
   alert: AlertInfo,
   codeSearch: CodeSearchResult
 ): Promise<LlmEvaluation> {
   const prompt = buildPrompt(alert, codeSearch);
 
   try {
-    const client = new Anthropic({ apiKey });
+    const model = registry.languageModel(modelId);
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+    const { output } = await generateText({
+      model,
+      output: Output.object({ schema: evaluationSchema }),
+      prompt,
     });
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
-
-    const evaluation = parseResponse(responseText);
-    if (!evaluation) {
+    if (!output) {
       console.warn(
         `Warning: Failed to parse LLM response for ${alert.packageName}. Using fallback.`
       );
       return FALLBACK_EVALUATION;
     }
 
-    return evaluation;
+    return output;
   } catch (error) {
     console.warn(
       `Warning: LLM evaluation failed for ${alert.packageName}: ${error}`

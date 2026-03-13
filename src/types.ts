@@ -63,4 +63,5 @@ export interface ScanOptions {
   format: "table" | "json";
   limit: number;
   epssThreshold: number;
+  model: string;
 }
