@@ -22,7 +22,7 @@
 
 ## Step 3: コンテキスト抽出 (Phase 2)
 - [x] src/services/code-search.ts — ripgrep実行+スニペット抽出
-- [ ] tests/services/code-search.test.ts
+- [x] tests/services/code-search.test.ts
 
 ## Step 4: LLM解析 (Phase 3)
 - [x] src/services/llm.ts — Anthropic SDK連携+構造化出力
