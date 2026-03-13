@@ -1,7 +1,7 @@
 {
   "name": "deptriage",
-  "version": "0.1.0",
-  "description": "CLI tool for triaging Dependabot alerts with threat intelligence and LLM-based reachability analysis",
+  "version": "0.2.0",
+  "description": "CLI tool for triaging Dependabot alerts with threat intelligence and code usage analysis",
   "type": "module",
   "bin": {
     "deptriage": "./dist/index.js"
@@ -14,14 +14,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.58",
-    "@ai-sdk/google": "^3.0.43",
-    "@ai-sdk/openai": "^3.0.41",
     "@octokit/rest": "^21.1.1",
-    "ai": "^6.0.116",
-    "cli-table3": "^0.6.5",
-    "commander": "^13.1.0",
-    "zod": "^4.3.6"
+    "commander": "^13.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

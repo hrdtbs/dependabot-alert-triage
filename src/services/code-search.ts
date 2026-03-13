@@ -8,9 +8,9 @@ import type { CodeSearchResult, CodeSnippet } from "../types.js";
 
 const execFileAsync = promisify(execFile);
 
-const MAX_FILES = 5;
-const CONTEXT_LINES = 20;
-const MAX_TOTAL_LINES = 1000;
+const MAX_FILES = 3;
+const CONTEXT_LINES = 5;
+const MAX_TOTAL_LINES = 200;
 
 async function cloneRepo(
   token: string,

@@ -1,38 +1,31 @@
-# TODO
+# TODO: LLMフレンドリーレポート出力への移行
 
-## Step 0: ドキュメント整備
-- [x] SPEC.md 作成
-- [x] TODO.md 作成
+## ドキュメント
+- [x] `SPEC.md`: v2.0に更新
+- [x] `TODO.md`: 作成
 
-## Step 1: プロジェクト初期化
-- [x] package.json 作成 (name: deptriage, bin設定)
-- [x] tsconfig.json 設定
-- [x] tsup.config.ts 設定
-- [x] vitest.config.ts 設定
-- [x] src/types.ts — 型定義
-- [x] src/config.ts — 環境変数読み込み+バリデーション
-- [x] src/index.ts — CLIエントリポイント (Commander.js)
+## 型定義・データ構造
+- [x] `src/types.ts`: LLM関連型の削除、`AlertReport`/`ScanOptions`の更新
 
-## Step 2: データ収集サービス (Phase 1)
-- [x] src/services/github.ts — Dependabotアラート取得
-- [x] src/services/kev.ts — CISA KEVカタログ照合 (キャッシュ付き)
-- [x] src/services/epss.ts — FIRST EPSS APIクエリ
-- [x] tests/services/kev.test.ts
-- [x] tests/services/epss.test.ts
+## データ収集
+- [x] `src/services/code-search.ts`: スニペット圧縮 (CONTEXT_LINES: 20→5, MAX_TOTAL_LINES: 1000→200, MAX_FILES: 5→3)
 
-## Step 3: コンテキスト抽出 (Phase 2)
-- [x] src/services/code-search.ts — ripgrep実行+スニペット抽出
-- [x] tests/services/code-search.test.ts
+## 出力
+- [x] `src/output/markdown.ts`: 新規作成（分析指示＋スコアリングマトリクス＋アラート詳細）
+- [x] `src/output/json.ts`: 新データ構造に更新（meta/scoringMatrix/analysisPrompt/alerts）
 
-## Step 4: LLM解析 (Phase 3)
-- [x] src/services/llm.ts — Anthropic SDK連携+構造化出力
-- [x] tests/services/llm.test.ts
+## コマンド・CLI
+- [x] `src/commands/scan.ts`: LLM/Scoringフェーズ除去、パイプライン簡素化
+- [x] `src/index.ts`: `--model`削除、`--format`を`markdown|json`に変更
 
-## Step 5: スコアリング + 出力 (Phase 4)
-- [x] src/scoring/matrix.ts — スコアリングマトリクス
-- [x] src/output/table.ts — テーブル出力
-- [x] src/output/json.ts — JSON出力
-- [x] tests/scoring/matrix.test.ts
+## 削除
+- [x] `src/services/llm.ts`: 削除
+- [x] `src/scoring/matrix.ts`: 削除
+- [x] `src/output/table.ts`: 削除
+- [x] `tests/services/llm.test.ts`: 削除
+- [x] `tests/scoring/matrix.test.ts`: 削除
+- [x] `package.json`: AI SDK依存 (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`, `zod`, `cli-table3`) 削除
 
-## Step 6: オーケストレーション
-- [x] src/commands/scan.ts — 全フェーズ統合
+## テスト
+- [x] `tests/output/markdown.test.ts`: 新規作成
+- [x] `tests/output/json.test.ts`: 新規作成
