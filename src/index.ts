@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { scanCommand } from "./commands/scan.js";
+import { triageCommand } from "./commands/triage.js";
 
 const program = new Command();
 
@@ -8,7 +9,7 @@ program
   .description(
     "Triage Dependabot alerts with threat intelligence and code usage analysis"
   )
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("scan")
@@ -33,6 +34,51 @@ program
       format: options.format as "markdown" | "json",
       limit: parseInt(options.limit, 10),
       epssThreshold: parseFloat(options.epssThreshold),
+    });
+  });
+
+program
+  .command("triage")
+  .description(
+    "Triage Dependabot alerts across all repositories for a user or organization"
+  )
+  .option(
+    "-f, --format <format>",
+    "Output format (markdown or json)",
+    "json"
+  )
+  .option(
+    "-l, --limit <number>",
+    "Max alerts per repository",
+    "50"
+  )
+  .option(
+    "--epss-threshold <number>",
+    "EPSS score threshold for High risk",
+    "0.05"
+  )
+  .option(
+    "--scope <scope>",
+    'Scope without prompt: "user" or "org:<name>"'
+  )
+  .option(
+    "--concurrency <number>",
+    "Max parallel repository operations",
+    "5"
+  )
+  .option(
+    "--skip-code-search",
+    "Skip cloning and code search (faster)",
+    false
+  )
+  .action(async (options) => {
+    await triageCommand({
+      format: options.format as "markdown" | "json",
+      limit: parseInt(options.limit, 10),
+      epssThreshold: parseFloat(options.epssThreshold),
+      scope: options.scope,
+      concurrency: parseInt(options.concurrency, 10),
+      skipCodeSearch: options.skipCodeSearch,
     });
   });
 

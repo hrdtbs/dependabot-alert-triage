@@ -147,6 +147,59 @@ async function extractSnippet(
   }
 }
 
+export async function searchCodeMultiPackage(
+  token: string,
+  repo: string,
+  packageNames: string[]
+): Promise<CodeSearchResult[]> {
+  const repoDir = await cloneRepo(token, repo);
+  const results: CodeSearchResult[] = [];
+
+  for (const packageName of packageNames) {
+    const matches = await searchWithRipgrep(repoDir, packageName);
+
+    const uniqueFiles = new Map<string, number>();
+    for (const match of matches) {
+      if (!uniqueFiles.has(match.filePath)) {
+        uniqueFiles.set(match.filePath, match.lineNumber);
+      }
+    }
+
+    const filesToProcess = Array.from(uniqueFiles.entries()).slice(0, MAX_FILES);
+    const snippets: CodeSnippet[] = [];
+    let totalLines = 0;
+
+    for (const [filePath, lineNumber] of filesToProcess) {
+      if (totalLines >= MAX_TOTAL_LINES) break;
+
+      const snippet = await extractSnippet(filePath, lineNumber);
+      if (snippet) {
+        const snippetLineCount = snippet.endLine - snippet.startLine + 1;
+        if (totalLines + snippetLineCount > MAX_TOTAL_LINES) {
+          const allowedLines = MAX_TOTAL_LINES - totalLines;
+          const truncatedContent = snippet.content
+            .split("\n")
+            .slice(0, allowedLines)
+            .join("\n");
+          snippets.push({
+            ...snippet,
+            endLine: snippet.startLine + allowedLines - 1,
+            content: truncatedContent,
+          });
+          totalLines = MAX_TOTAL_LINES;
+        } else {
+          snippets.push(snippet);
+          totalLines += snippetLineCount;
+        }
+      }
+    }
+
+    results.push({ packageName, snippets });
+  }
+
+  return results;
+}
+
 export async function searchCode(
   token: string,
   repo: string,

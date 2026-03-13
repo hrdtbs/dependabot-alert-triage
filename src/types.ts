@@ -49,3 +49,48 @@ export interface ScanOptions {
   limit: number;
   epssThreshold: number;
 }
+
+/** 認証ユーザー情報 */
+export interface UserInfo {
+  login: string;
+  name: string | null;
+}
+
+/** Organization情報 */
+export interface OrgInfo {
+  login: string;
+  description: string | null;
+}
+
+/** スコープ選択 */
+export type ScopeSelection =
+  | { type: "user"; login: string }
+  | { type: "org"; org: string };
+
+/** リポジトリ別アラート */
+export interface RepoAlerts {
+  repo: string;
+  alerts: AlertInfo[];
+}
+
+/** リポジトリ別トリアージ結果 */
+export interface RepoTriageResult {
+  repo: string;
+  alerts: AlertReport[];
+}
+
+/** triageコマンドのCLIオプション */
+export interface TriageOptions {
+  format: "markdown" | "json";
+  limit: number;
+  epssThreshold: number;
+  scope?: string;
+  concurrency: number;
+  skipCodeSearch: boolean;
+}
+
+/** マルチリポトリアージレポート */
+export interface TriageReport {
+  scope: ScopeSelection;
+  repos: RepoTriageResult[];
+}
