@@ -42,14 +42,6 @@ export interface AlertReport {
   codeSearch: CodeSearchResult;
 }
 
-/** CLI設定 */
-export interface ScanOptions {
-  repo: string;
-  format: "markdown" | "json";
-  limit: number;
-  epssThreshold: number;
-}
-
 /** 認証ユーザー情報 */
 export interface UserInfo {
   login: string;
@@ -65,7 +57,8 @@ export interface OrgInfo {
 /** スコープ選択 */
 export type ScopeSelection =
   | { type: "user"; login: string }
-  | { type: "org"; org: string };
+  | { type: "org"; org: string }
+  | { type: "repo"; repo: string };
 
 /** リポジトリ別アラート */
 export interface RepoAlerts {
@@ -84,7 +77,9 @@ export interface TriageOptions {
   format: "markdown" | "json";
   limit: number;
   epssThreshold: number;
-  scope?: string;
+  repo?: string;
+  org?: string;
+  user?: string;
   concurrency: number;
   skipCodeSearch: boolean;
 }

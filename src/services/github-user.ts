@@ -51,7 +51,7 @@ export async function fetchAlertsForOrg(
   const repoMap = new Map<string, AlertInfo[]>();
 
   for (const alert of allAlerts) {
-    const repoFullName = (alert as { repository?: { full_name?: string } })
+    const repoFullName = (alert as unknown as { repository?: { full_name?: string } })
       .repository?.full_name;
     if (!repoFullName) continue;
 

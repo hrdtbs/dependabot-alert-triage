@@ -5,7 +5,8 @@ import {
   fetchAlertsForOrg,
   fetchAlertsForUser,
 } from "../services/github-user.js";
-import { selectScope, parseScope } from "../services/prompt.js";
+import { fetchDependabotAlerts } from "../services/github.js";
+import { selectScope } from "../services/prompt.js";
 import { checkKev } from "../services/kev.js";
 import { fetchEpssScores } from "../services/epss.js";
 import { searchCodeMultiPackage } from "../services/code-search.js";
@@ -23,55 +24,77 @@ import type {
 export async function triageCommand(options: TriageOptions): Promise<void> {
   const config = loadConfig();
 
-  // Step 1: 認証ユーザー情報とOrg一覧を並列取得
-  console.error("Fetching user info and organizations...\n");
-  const [user, orgs] = await Promise.all([
-    fetchAuthenticatedUser(config.githubToken),
-    fetchUserOrgs(config.githubToken),
-  ]);
-
-  console.error(
-    `Authenticated as: ${user.login}${user.name ? ` (${user.name})` : ""}`
-  );
-  if (orgs.length > 0) {
-    console.error(
-      `Organizations: ${orgs.map((o) => o.login).join(", ")}`
-    );
-  }
-  console.error("");
-
-  // Step 2: スコープ選択
+  // Step 1 & 2: スコープ決定とアラート取得
   let scope: ScopeSelection;
-  if (options.scope) {
-    scope = parseScope(options.scope);
-    if (scope.type === "user" && !scope.login) {
-      scope = { type: "user", login: user.login };
-    }
-  } else {
-    scope = await selectScope(user, orgs);
-  }
-
-  const scopeLabel =
-    scope.type === "org" ? `org:${scope.org}` : `user:${scope.login}`;
-  console.error(`\nScope: ${scopeLabel}`);
-
-  // Step 3: アラート取得
-  console.error("Fetching Dependabot alerts...\n");
   let repoAlerts: RepoAlerts[];
 
-  if (scope.type === "org") {
-    repoAlerts = await fetchAlertsForOrg(
+  if (options.repo) {
+    scope = { type: "repo", repo: options.repo };
+    console.error(`Scope: repo:${options.repo}`);
+    console.error("Fetching Dependabot alerts...\n");
+    const alerts = await fetchDependabotAlerts(
       config.githubToken,
-      scope.org,
+      options.repo,
       options.limit
     );
-  } else {
+    repoAlerts = [{ repo: options.repo, alerts }];
+  } else if (options.org) {
+    scope = { type: "org", org: options.org };
+    console.error(`Scope: org:${options.org}`);
+    console.error("Fetching Dependabot alerts...\n");
+    repoAlerts = await fetchAlertsForOrg(
+      config.githubToken,
+      options.org,
+      options.limit
+    );
+  } else if (options.user) {
+    scope = { type: "user", login: options.user };
+    console.error(`Scope: user:${options.user}`);
+    console.error("Fetching Dependabot alerts...\n");
     repoAlerts = await fetchAlertsForUser(
       config.githubToken,
-      scope.login,
+      options.user,
       options.limit,
       options.concurrency
     );
+  } else {
+    console.error("Fetching user info and organizations...\n");
+    const [user, orgs] = await Promise.all([
+      fetchAuthenticatedUser(config.githubToken),
+      fetchUserOrgs(config.githubToken),
+    ]);
+
+    console.error(
+      `Authenticated as: ${user.login}${user.name ? ` (${user.name})` : ""}`
+    );
+    if (orgs.length > 0) {
+      console.error(
+        `Organizations: ${orgs.map((o) => o.login).join(", ")}`
+      );
+    }
+    console.error("");
+
+    scope = await selectScope(user, orgs);
+
+    const scopeLabel =
+      scope.type === "org" ? `org:${scope.org}` : `user:${scope.login}`;
+    console.error(`\nScope: ${scopeLabel}`);
+    console.error("Fetching Dependabot alerts...\n");
+
+    if (scope.type === "org") {
+      repoAlerts = await fetchAlertsForOrg(
+        config.githubToken,
+        scope.org,
+        options.limit
+      );
+    } else {
+      repoAlerts = await fetchAlertsForUser(
+        config.githubToken,
+        scope.login,
+        options.limit,
+        options.concurrency
+      );
+    }
   }
 
   if (repoAlerts.length === 0) {

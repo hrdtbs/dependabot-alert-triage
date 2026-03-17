@@ -26,22 +26,3 @@ export async function selectScope(
     choices,
   });
 }
-
-export function parseScope(scopeStr: string): ScopeSelection {
-  if (scopeStr === "user") {
-    // ユーザースコープは後でloginを埋める
-    return { type: "user", login: "" };
-  }
-  if (scopeStr.startsWith("org:")) {
-    const org = scopeStr.slice(4);
-    if (!org) {
-      throw new Error(
-        'Invalid --scope format. Use "user" or "org:<name>".'
-      );
-    }
-    return { type: "org", org };
-  }
-  throw new Error(
-    'Invalid --scope format. Use "user" or "org:<name>".'
-  );
-}
