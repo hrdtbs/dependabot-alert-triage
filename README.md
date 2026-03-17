@@ -1,6 +1,6 @@
 # deptriage
 
-Dependabot アラートを脅威インテリジェンス（KEV, EPSS）と LLM によるコード到達可能性解析でトリアージする CLI ツール。
+Dependabot アラートを脅威インテリジェンス（KEV, EPSS）とコード利用状況で収集・可視化し、LLM によるトリアージを支援する CLI ツール。
 
 ## 必要環境
 
@@ -27,56 +27,72 @@ export GITHUB_TOKEN=$(gh auth token)
 
 必要なスコープ: `repo` または `security_events`
 
-### LLM API キー
-
-使用する LLM プロバイダーに応じた環境変数を設定します。
-
-| プロバイダー | 環境変数 | モデル例 |
-|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `anthropic:claude-sonnet-4-20250514` |
-| OpenAI | `OPENAI_API_KEY` | `openai:gpt-4o` |
-| Google | `GOOGLE_GENERATIVE_AI_API_KEY` | `google:gemini-2.0-flash` |
-
-```bash
-# 例: Anthropic を使う場合
-export ANTHROPIC_API_KEY=sk-ant-...
-```
-
 ## 使い方
+
+### `scan` コマンド（単一リポジトリ）
 
 ```bash
 deptriage scan --repo <owner/repo> [options]
 ```
 
-### オプション
-
 | オプション | 短縮 | デフォルト | 説明 |
 |---|---|---|---|
 | `--repo` | `-r` | (必須) | 対象の GitHub リポジトリ |
-| `--format` | `-f` | `table` | 出力形式 (`table` / `json`) |
+| `--format` | `-f` | `markdown` | 出力形式 (`markdown` / `json`) |
 | `--limit` | `-l` | `50` | 評価するアラートの最大件数 |
 | `--epss-threshold` | | `0.05` | HIGH 判定の EPSS 閾値 (0.0〜1.0) |
-| `--model` | `-m` | `anthropic:claude-sonnet-4-20250514` | LLM モデル (`provider:model` 形式) |
 
-### 例
+#### 例
 
 ```bash
-# テーブル形式で出力
+# Markdown 形式で出力（デフォルト）
 deptriage scan --repo my-org/my-app
 
 # JSON 形式で出力、上限 10 件
 deptriage scan --repo my-org/my-app --format json --limit 10
 
-# OpenAI のモデルを使用
-deptriage scan --repo my-org/my-app --model openai:gpt-4o
-
 # ビルドせずに直接実行
 node dist/index.js scan --repo my-org/my-app
 ```
 
-## リスク評価
+### `triage` コマンド（ユーザー / Organization 全体）
 
-各アラートに対して以下の情報を統合し、最終リスクを判定します。
+```bash
+deptriage triage [options]
+```
+
+| オプション | 短縮 | デフォルト | 説明 |
+|---|---|---|---|
+| `--format` | `-f` | `json` | 出力形式 (`markdown` / `json`) |
+| `--limit` | `-l` | `50` | リポジトリあたりの最大アラート数 |
+| `--epss-threshold` | | `0.05` | HIGH 判定の EPSS 閾値 (0.0〜1.0) |
+| `--scope` | | (対話) | 非対話モード用スコープ (`user` / `org:<name>`) |
+| `--concurrency` | | `5` | 並列リポジトリ処理数 |
+| `--skip-code-search` | | `false` | コード検索をスキップ（高速モード） |
+
+#### 例
+
+```bash
+# 対話形式でスコープを選択
+deptriage triage
+
+# Organization 全体を非対話で実行
+deptriage triage --scope org:my-company
+
+# ユーザーリポジトリを Markdown 形式で出力
+deptriage triage --scope user --format markdown
+
+# コード検索をスキップして高速実行
+deptriage triage --scope org:my-company --skip-code-search
+```
+
+## 出力の使い方
+
+出力レポートは LLM（Claude, GPT-4 等）に貼り付けて分析させることを想定しています。レポート内にスコアリングマトリクスと分析指示が含まれています。
+
+## リスク評価マトリクス（LLM 用）
+
+LLM は以下の優先順位で評価し、最初に合致した条件のリスクを採用します。
 
 | 優先度 | KEV | コンテキスト | 到達可能性 | EPSS | リスク |
 |---|---|---|---|---|---|
@@ -88,4 +104,4 @@ node dist/index.js scan --repo my-org/my-app
 
 - **KEV**: CISA Known Exploited Vulnerabilities カタログに含まれるか
 - **EPSS**: FIRST EPSS API による今後 30 日間の悪用確率
-- **到達可能性 / コンテキスト**: LLM がソースコードを解析して判定
+- **到達可能性 / コンテキスト**: LLM がソースコードスニペットを解析して判定

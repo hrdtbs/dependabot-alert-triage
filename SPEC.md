@@ -4,11 +4,24 @@
 
 GitHub Dependabotのアラートに対して、脅威インテリジェンス（KEV, EPSS）とリポジトリ内の実際のコード利用状況を収集・可視化するツール。
 
-v4.0ではCLIに加え、Electronベースの**Desktop App**を提供する。Desktop Appでは、アラートの一覧表示・フィルタリング、暫定リスクスコアリング、キャッシュによるオフライン閲覧、内蔵ターミナルによるAI Agent連携が可能。
+現在はCLI（`deptriage`）として実装済み。v4.0ではCLIに加え、Electronベースの**Desktop App**を追加予定。Desktop Appでは、アラートの一覧表示・フィルタリング、暫定リスクスコアリング、キャッシュによるオフライン閲覧、内蔵ターミナルによるAI Agent連携が可能になる予定。
 
 CLIは引き続き並行して維持し、CI/スクリプト環境での利用に対応する。
 
 ### 1.1. 技術スタック
+
+#### 現在実装済み
+
+| レイヤー | 技術 |
+|---------|------|
+| CLIフレームワーク | Commander.js |
+| GitHub API | @octokit/rest |
+| インタラクティブ入力 | @inquirer/prompts |
+| ビルド | tsup |
+| テスト | Vitest |
+| 言語 | TypeScript 5.7 / Node.js 18+ |
+
+#### 計画中（Desktop App）
 
 | レイヤー | 技術 |
 |---------|------|
@@ -20,10 +33,23 @@ CLIは引き続き並行して維持し、CI/スクリプト環境での利用�
 | キャッシュ DB | better-sqlite3 |
 | CSS | Tailwind CSS + shadcn/ui |
 | ビルド（Electron） | electron-forge (Vite plugin) |
-| ビルド（CLI） | tsup（既存） |
 | テスト | Vitest + React Testing Library |
 
 ### 1.2. アーキテクチャ
+
+#### 現在
+
+```
+src/index.ts          ← CLIエントリポイント（Commander.js）
+src/commands/         ← コマンド実装（scan, triage）
+src/services/         ← 外部API連携
+src/output/           ← レポートフォーマッター
+src/utils/            ← ユーティリティ
+src/types.ts          ← 型定義
+src/config.ts         ← 環境変数ロード
+```
+
+#### 計画中（Desktop App 追加後）
 
 ```
 ┌──────────────────────────────────────┐
@@ -51,9 +77,37 @@ CLIは引き続き並行して維持し、CI/スクリプト環境での利用�
 
 ### 1.3. ディレクトリ構成
 
+#### 現在
+
 ```
 src/
-  core/                        # 共有オーケストレーター
+  commands/                    # CLIコマンド実装
+    scan.ts                    #   scan コマンド
+    triage.ts                  #   triage コマンド
+  services/                    # 外部API連携
+    github.ts                  #   単一リポジトリのアラート取得
+    github-user.ts             #   ユーザー/Org のアラート取得
+    kev.ts                     #   CISA KEV照合
+    epss.ts                    #   FIRST EPSSスコア取得
+    code-search.ts             #   コード検索（git clone + rg/grep）
+    prompt.ts                  #   インタラクティブスコープ選択
+  output/                      # レポートレンダラー
+    markdown.ts                #   scan Markdown出力
+    json.ts                    #   scan JSON出力
+    triage-markdown.ts         #   triage Markdown出力
+    triage-json.ts             #   triage JSON出力
+  utils/
+    concurrency.ts             #   並列制御（pLimit）
+  types.ts                     # 型定義（共有）
+  config.ts                    # 環境変数ロード
+  index.ts                     # CLIエントリポイント
+```
+
+#### 計画中（Desktop App 追加後）
+
+```
+src/
+  core/                        # 共有オーケストレーター（新規）
     scan-orchestrator.ts       #   scan の I/O 非依存ロジック
     triage-orchestrator.ts     #   triage の I/O 非依存ロジック
     scoring.ts                 #   暫定リスクスコアリング
@@ -61,18 +115,18 @@ src/
   output/                      # レポートレンダラー（既存）
   types.ts                     # 型定義（共有）
   utils/                       # ユーティリティ（既存）
-  cli/                         # CLI エントリポイント
+  cli/                         # CLI エントリポイント（src/commands/ → src/cli/ に移動）
     index.ts                   #   Commander.js 登録
     scan.ts                    #   scan CLI アダプター
     triage.ts                  #   triage CLI アダプター
-  main/                        # Electron メインプロセス
+  main/                        # Electron メインプロセス（新規）
     index.ts                   #   BrowserWindow 作成
     ipc-handlers.ts            #   IPC ハンドラー
     cache-manager.ts           #   SQLite CRUD
     pty-manager.ts             #   ターミナル管理
   preload/
     preload.ts                 #   contextBridge API
-  renderer/                    # React アプリ
+  renderer/                    # React アプリ（新規）
     src/
       App.tsx
       pages/                   #   Dashboard, Alerts, Terminal, Settings
@@ -83,7 +137,7 @@ src/
 
 ---
 
-## 2. CLI コマンド体系（既存）
+## 2. CLI コマンド体系（実装済み）
 
 ### 2.1. `scan` コマンド（単一リポジトリ）
 
@@ -117,44 +171,45 @@ $ deptriage triage [options]
 
 ## 3. 共通処理フロー
 
-CLI・Desktop App共通のコアロジック。`src/core/` に実装する。
+### 3.1. scan コマンドの現在のフロー（`src/commands/scan.ts`）
 
-### 3.1. scan オーケストレーター
+1. `loadConfig()` で `GITHUB_TOKEN` を取得
+2. `fetchDependabotAlerts()` でDependabotアラート取得（カーソルベースページネーション）
+3. CVE IDを集約し、`checkKev()` + `fetchEpssScores()` を並列実行
+4. 各アラートについて `searchCode()` でコード検索実行
+5. `renderMarkdown()` / `renderJson()` でレポート出力
+
+### 3.2. triage コマンドの現在のフロー（`src/commands/triage.ts`）
+
+1. `fetchAuthenticatedUser()` / `fetchUserOrgs()` を並列取得
+2. スコープ選択（`--scope` フラグまたは対話）
+3. `fetchAlertsForOrg()` / `fetchAlertsForUser()` でアラート収集
+4. 全CVE IDを集約し、KEV + EPSS並列取得
+5. `pLimit` で並列制御しながらリポジトリ単位でコード検索
+6. `renderTriageJson()` / `renderTriageMarkdown()` でレポート出力
+
+### 3.3. 計画中：コアオーケストレーター（`src/core/`）
+
+Desktop App対応に向けて、I/O非依存のロジックをコアに抽出する予定。
 
 ```typescript
+// 計画中API
 runScan(options, token, onProgress) → { reports: AlertReport[], meta: ScanMeta }
-```
-
-1. GitHub APIでDependabotアラート取得（カーソルベースページネーション）
-2. CVE IDを集約し、KEV照合 + EPSS取得を並列実行
-3. 各アラートについてコード検索実行
-4. 暫定リスクスコアを算出（Desktop App用）
-5. 結果を返却
-
-### 3.2. triage オーケストレーター
-
-```typescript
 runTriage(options, token, scope, onProgress) → { results: RepoTriageResult[], meta: TriageMeta }
 ```
 
-1. スコープに応じてアラート収集（Org一括 or ユーザーリポ並列）
-2. 全CVE IDを集約し、KEV + EPSS並列取得
-3. リポジトリ単位でコード検索（concurrency制御）
-4. 暫定リスクスコアを算出
-5. 結果を返却
-
-### 3.3. 進捗コールバック
-
-両オーケストレーターは `onProgress: (message: string) => void` を受け取り、処理の進捗を通知する。
+両関数は `onProgress: (message: string) => void` を受け取り、処理の進捗を通知する。
 
 * CLI: `console.error` に出力
 * Desktop App: IPC経由でRendererに送信し、UIに表示
 
 ---
 
-## 4. 暫定リスクスコアリング
+## 4. 暫定リスクスコアリング（計画中）
 
-LLMを使わずにアプリ内でリスクレベルを即時算出するヒューリスティック。`src/core/scoring.ts` に実装。
+> **未実装。** Desktop App対応時に `src/core/scoring.ts` として実装予定。
+
+LLMを使わずにアプリ内でリスクレベルを即時算出するヒューリスティック。
 
 ### 4.1. スコアリングルール
 
@@ -176,7 +231,7 @@ LLMを使わずにアプリ内でリスクレベルを即時算出するヒュ�
 * `dev`, `tool`, `script` を含む → Dev
 * それ以外 → Production
 
-### 4.3. 出力型
+### 4.3. 出力型（計画中）
 
 ```typescript
 interface PreliminaryRisk {
@@ -204,7 +259,9 @@ UIでは `confidence` が low の場合「暫定 - LLM分析推奨」と表示�
 
 ---
 
-## 6. Desktop App UI仕様
+## 6. Desktop App UI仕様（計画中）
+
+> **未実装。** Electron/React対応時に実装予定。
 
 ### 6.1. レイアウト
 
@@ -294,7 +351,9 @@ UIでは `confidence` が low の場合「暫定 - LLM分析推奨」と表示�
 
 ---
 
-## 7. IPC設計
+## 7. IPC設計（計画中）
+
+> **未実装。** Electron対応時に実装予定。
 
 Electron Main/Renderer間の通信チャネル。`contextBridge` で型安全なAPIを公開する。
 
@@ -318,7 +377,9 @@ Electron Main/Renderer間の通信チャネル。`contextBridge` で型安全な
 
 ---
 
-## 8. キャッシュ設計
+## 8. キャッシュ設計（計画中）
+
+> **未実装。** Electron対応時に実装予定。
 
 **保存先**: `~/.deptriage/cache.db` (better-sqlite3)
 
@@ -373,7 +434,7 @@ CREATE TABLE settings (
 
 ---
 
-## 9. CLI出力仕様（既存）
+## 9. CLI出力仕様（実装済み）
 
 ### 9.1. `scan` コマンドの出力
 
@@ -459,10 +520,10 @@ CREATE TABLE settings (
 
 ## 10. 非機能要件・制約事項
 
-* **実行環境**: TypeScript (Node.js)。CLIはnpxでの実行を想定。Desktop AppはElectronパッケージとして配布。
+* **実行環境**: TypeScript (Node.js 18+)。CLIはnpxでの実行を想定。Desktop AppはElectronパッケージとして配布予定。
 * **依存ツール**: ホスト環境に `git` および `ripgrep (rg)` または `grep` がインストールされていること。
 * **スニペット上限**: 1アラートにつき最大3ファイル、合計200行。
-* **LLM非依存**: ツール自体はLLM APIを呼び出さない。暫定スコアリングはヒューリスティックで算出。
+* **LLM非依存**: ツール自体はLLM APIを呼び出さない。出力レポートをLLMに渡して分析させる設計。
 * **並列制御**: リポジトリ処理はconcurrency制限付きで並列実行。
 * **非対話環境対応**: CLIは`--scope`フラグによりCI/スクリプトでの利用が可能。
-* **セキュリティ**: Electronの`contextIsolation: true`、`nodeIntegration: false`を徹底。GitHub Tokenは安全に管理。
+* **セキュリティ**: Desktop App実装時はElectronの`contextIsolation: true`、`nodeIntegration: false`を徹底。GitHub Tokenは安全に管理。
