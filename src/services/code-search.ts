@@ -7,9 +7,9 @@ import type { CodeSearchResult, CodeSnippet } from "../types.js";
 
 const execFileAsync = promisify(execFile);
 
-const MAX_FILES = 3;
-const CONTEXT_LINES = 5;
-const MAX_TOTAL_LINES = 200;
+export const MAX_FILES = 3;
+export const CONTEXT_LINES = 5;
+export const MAX_TOTAL_LINES = 200;
 
 async function cloneRepo(
   token: string,
@@ -147,68 +147,9 @@ async function extractSnippet(
   }
 }
 
-export async function searchCodeMultiPackage(
-  token: string,
-  repo: string,
-  packageNames: string[]
-): Promise<CodeSearchResult[]> {
-  const repoDir = await cloneRepo(token, repo);
-  const results: CodeSearchResult[] = [];
-
-  for (const packageName of packageNames) {
-    const matches = await searchWithRipgrep(repoDir, packageName);
-
-    const uniqueFiles = new Map<string, number>();
-    for (const match of matches) {
-      if (!uniqueFiles.has(match.filePath)) {
-        uniqueFiles.set(match.filePath, match.lineNumber);
-      }
-    }
-
-    const filesToProcess = Array.from(uniqueFiles.entries()).slice(0, MAX_FILES);
-    const snippets: CodeSnippet[] = [];
-    let totalLines = 0;
-
-    for (const [filePath, lineNumber] of filesToProcess) {
-      if (totalLines >= MAX_TOTAL_LINES) break;
-
-      const snippet = await extractSnippet(filePath, lineNumber);
-      if (snippet) {
-        const snippetLineCount = snippet.endLine - snippet.startLine + 1;
-        if (totalLines + snippetLineCount > MAX_TOTAL_LINES) {
-          const allowedLines = MAX_TOTAL_LINES - totalLines;
-          const truncatedContent = snippet.content
-            .split("\n")
-            .slice(0, allowedLines)
-            .join("\n");
-          snippets.push({
-            ...snippet,
-            endLine: snippet.startLine + allowedLines - 1,
-            content: truncatedContent,
-          });
-          totalLines = MAX_TOTAL_LINES;
-        } else {
-          snippets.push(snippet);
-          totalLines += snippetLineCount;
-        }
-      }
-    }
-
-    results.push({ packageName, snippets });
-  }
-
-  return results;
-}
-
-export async function searchCode(
-  token: string,
-  repo: string,
-  packageName: string
-): Promise<CodeSearchResult> {
-  const repoDir = await cloneRepo(token, repo);
-  const matches = await searchWithRipgrep(repoDir, packageName);
-
-  // Deduplicate by file path, keep first match per file
+async function collectSnippets(
+  matches: Array<{ filePath: string; lineNumber: number }>
+): Promise<CodeSnippet[]> {
   const uniqueFiles = new Map<string, number>();
   for (const match of matches) {
     if (!uniqueFiles.has(match.filePath)) {
@@ -216,9 +157,7 @@ export async function searchCode(
     }
   }
 
-  // Limit to MAX_FILES
   const filesToProcess = Array.from(uniqueFiles.entries()).slice(0, MAX_FILES);
-
   const snippets: CodeSnippet[] = [];
   let totalLines = 0;
 
@@ -229,7 +168,6 @@ export async function searchCode(
     if (snippet) {
       const snippetLineCount = snippet.endLine - snippet.startLine + 1;
       if (totalLines + snippetLineCount > MAX_TOTAL_LINES) {
-        // Truncate to fit within limit
         const allowedLines = MAX_TOTAL_LINES - totalLines;
         const truncatedContent = snippet.content
           .split("\n")
@@ -248,5 +186,33 @@ export async function searchCode(
     }
   }
 
+  return snippets;
+}
+
+export async function searchCodeMultiPackage(
+  token: string,
+  repo: string,
+  packageNames: string[]
+): Promise<CodeSearchResult[]> {
+  const repoDir = await cloneRepo(token, repo);
+  const results: CodeSearchResult[] = [];
+
+  for (const packageName of packageNames) {
+    const matches = await searchWithRipgrep(repoDir, packageName);
+    const snippets = await collectSnippets(matches);
+    results.push({ packageName, snippets });
+  }
+
+  return results;
+}
+
+export async function searchCode(
+  token: string,
+  repo: string,
+  packageName: string
+): Promise<CodeSearchResult> {
+  const repoDir = await cloneRepo(token, repo);
+  const matches = await searchWithRipgrep(repoDir, packageName);
+  const snippets = await collectSnippets(matches);
   return { packageName, snippets };
 }
