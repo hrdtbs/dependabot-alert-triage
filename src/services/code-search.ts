@@ -1,8 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
 import type { CodeSearchResult, CodeSnippet } from "../types.js";
 
@@ -16,12 +15,13 @@ async function cloneRepo(
   token: string,
   repo: string
 ): Promise<string> {
-  const cloneDir = join(tmpdir(), "deptriage-repos", repo.replace("/", "_"));
+  const cloneDir = join(process.cwd(), ".deptriage-cache", repo.replace("/", "_"));
 
   if (existsSync(join(cloneDir, ".git"))) {
     return cloneDir;
   }
 
+  await mkdir(cloneDir, { recursive: true });
   const cloneUrl = `https://x-access-token:${token}@github.com/${repo}.git`;
   await execFileAsync("git", ["clone", "--depth", "1", cloneUrl, cloneDir]);
 
