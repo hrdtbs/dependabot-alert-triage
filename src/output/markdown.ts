@@ -1,28 +1,5 @@
 import type { AlertReport } from "../types.js";
-
-function buildAnalysisPrompt(epssThreshold: number): string {
-  const thresholdPercent = (epssThreshold * 100).toFixed(0);
-  return `あなたはセキュリティエンジニアです。以下のDependabotアラート一覧を分析し、各アラートについてトリアージを実施してください。
-
-各アラートについて、コードスニペットを確認し以下を判定してください:
-- **Reachability**: High（対象パッケージの関数・クラスが直接呼び出されている）/ Medium（インポートされているが呼び出しが不明確）/ Low（インポートのみ、または使用箇所なし）
-- **Context**: Production（本番コード）/ Development（ビルドスクリプト等）/ Test（テストコード）
-
-判定後、以下のスコアリングマトリクスを上から順に適用し、最初に合致した条件のFinal Riskを割り当ててください:
-
-| 優先順位 | KEV | Context | Reachability | EPSS | Final Risk |
-| --- | --- | --- | --- | --- | --- |
-| 1 | True | - | - | - | CRITICAL |
-| 2 | False | Test / Dev | - | - | IGNORE |
-| 3 | False | Production | Low | - | LOW |
-| 4 | False | Production | High / Medium | >= ${thresholdPercent}% | HIGH |
-| 5 | False | Production | High / Medium | < ${thresholdPercent}% | MEDIUM |
-
-結果を以下のテーブル形式で出力し、各アラートに判定理由を簡潔に付記してください:
-
-| # | Package | CVE | KEV | EPSS | Reachability | Context | Final Risk | 理由 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |`;
-}
+import { buildMarkdownAnalysisPrompt } from "./shared.js";
 
 function formatAlert(r: AlertReport): string {
   const lines: string[] = [];
@@ -80,7 +57,11 @@ export function renderMarkdown(
   lines.push("");
   lines.push("## 分析指示");
   lines.push("");
-  lines.push(buildAnalysisPrompt(epssThreshold));
+  lines.push(buildMarkdownAnalysisPrompt(
+    epssThreshold,
+    "以下のDependabotアラート一覧を分析し、各アラートについてトリアージを実施してください。",
+    "結果を以下のテーブル形式で出力し、各アラートに判定理由を簡潔に付記してください:"
+  ));
 
   lines.push("");
   lines.push("---");

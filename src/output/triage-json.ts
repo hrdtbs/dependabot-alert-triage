@@ -1,51 +1,5 @@
 import type { RepoTriageResult, ScopeSelection } from "../types.js";
-
-const SCORING_MATRIX = {
-  description:
-    "上から順に評価し、最初に合致した条件のFinal Riskを割り当てる",
-  rules: [
-    {
-      priority: 1,
-      kev: true,
-      context: null,
-      reachability: null,
-      epss: null,
-      finalRisk: "CRITICAL",
-    },
-    {
-      priority: 2,
-      kev: false,
-      context: "Test / Development",
-      reachability: null,
-      epss: null,
-      finalRisk: "IGNORE",
-    },
-    {
-      priority: 3,
-      kev: false,
-      context: "Production",
-      reachability: "Low",
-      epss: null,
-      finalRisk: "LOW",
-    },
-    {
-      priority: 4,
-      kev: false,
-      context: "Production",
-      reachability: "High / Medium",
-      epss: ">= threshold",
-      finalRisk: "HIGH",
-    },
-    {
-      priority: 5,
-      kev: false,
-      context: "Production",
-      reachability: "High / Medium",
-      epss: "< threshold",
-      finalRisk: "MEDIUM",
-    },
-  ],
-};
+import { SCORING_MATRIX } from "./shared.js";
 
 function buildAnalysisPrompt(epssThreshold: number): string {
   const thresholdPercent = (epssThreshold * 100).toFixed(0);
@@ -53,7 +7,9 @@ function buildAnalysisPrompt(epssThreshold: number): string {
 }
 
 function formatScope(scope: ScopeSelection): string {
-  return scope.type === "org" ? `org:${scope.org}` : `user:${scope.login}`;
+  if (scope.type === "org") return `org:${scope.org}`;
+  if (scope.type === "repo") return `repo:${scope.repo}`;
+  return `user:${scope.login}`;
 }
 
 export function renderTriageJson(

@@ -1,51 +1,5 @@
 import type { AlertReport } from "../types.js";
-
-const SCORING_MATRIX = {
-  description:
-    "上から順に評価し、最初に合致した条件のFinal Riskを割り当てる",
-  rules: [
-    {
-      priority: 1,
-      kev: true,
-      context: null,
-      reachability: null,
-      epss: null,
-      finalRisk: "CRITICAL",
-    },
-    {
-      priority: 2,
-      kev: false,
-      context: "Test / Development",
-      reachability: null,
-      epss: null,
-      finalRisk: "IGNORE",
-    },
-    {
-      priority: 3,
-      kev: false,
-      context: "Production",
-      reachability: "Low",
-      epss: null,
-      finalRisk: "LOW",
-    },
-    {
-      priority: 4,
-      kev: false,
-      context: "Production",
-      reachability: "High / Medium",
-      epss: ">= threshold",
-      finalRisk: "HIGH",
-    },
-    {
-      priority: 5,
-      kev: false,
-      context: "Production",
-      reachability: "High / Medium",
-      epss: "< threshold",
-      finalRisk: "MEDIUM",
-    },
-  ],
-};
+import { SCORING_MATRIX } from "./shared.js";
 
 function buildAnalysisPrompt(epssThreshold: number): string {
   const thresholdPercent = (epssThreshold * 100).toFixed(0);
