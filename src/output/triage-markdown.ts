@@ -14,17 +14,37 @@ function formatScope(scope: ScopeSelection): string {
 function formatAlert(r: AlertReport): string {
   const lines: string[] = [];
 
+  const cvssLabel = r.alert.cvssV4
+    ? `${r.alert.cvssV4.score} (v4)`
+    : r.alert.cvssV3
+      ? `${r.alert.cvssV3.score} (v3)`
+      : "N/A";
+
   lines.push(
     `#### Alert #${r.alert.number}: ${r.alert.packageName} (${r.alert.cveId ?? "CVE なし"})`
   );
   lines.push("");
-  lines.push(`- **脆弱バージョン**: ${r.alert.vulnerableVersion}`);
-  lines.push(`- **マニフェスト**: ${r.alert.manifestPath}`);
-  lines.push(`- **説明**: ${r.alert.description}`);
+  lines.push(`- **Severity**: ${r.alert.severity}`);
+  lines.push(`- **CVSS**: ${cvssLabel}`);
   lines.push(`- **KEV**: ${r.kev ? "Yes" : "No"}`);
   lines.push(
     `- **EPSS**: ${r.epss !== null ? `${(r.epss * 100).toFixed(1)}%` : "N/A"}`
   );
+  if (r.alert.cwes.length > 0) {
+    lines.push(
+      `- **CWE**: ${r.alert.cwes.map((c) => `${c.cweId} (${c.name})`).join(", ")}`
+    );
+  }
+  lines.push(`- **脆弱バージョン**: ${r.alert.vulnerableVersion}`);
+  if (r.alert.firstPatchedVersion) {
+    lines.push(`- **修正バージョン**: ${r.alert.firstPatchedVersion}`);
+  }
+  lines.push(`- **マニフェスト**: ${r.alert.manifestPath}`);
+  if (r.alert.dependencyScope) {
+    lines.push(`- **スコープ**: ${r.alert.dependencyScope}`);
+  }
+  lines.push(`- **説明**: ${r.alert.description}`);
+  lines.push(`- **URL**: ${r.alert.htmlUrl}`);
 
   if (r.codeSearch.snippets.length > 0) {
     lines.push("");

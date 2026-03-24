@@ -37,11 +37,18 @@ export function renderTriageJson(
       alertCount: r.alerts.length,
       alerts: r.alerts.map((a) => ({
         number: a.alert.number,
+        htmlUrl: a.alert.htmlUrl,
         packageName: a.alert.packageName,
         cveId: a.alert.cveId,
+        severity: a.alert.severity,
+        cvssV3: a.alert.cvssV3,
+        cvssV4: a.alert.cvssV4,
         vulnerableVersion: a.alert.vulnerableVersion,
+        firstPatchedVersion: a.alert.firstPatchedVersion,
         manifestPath: a.alert.manifestPath,
+        dependencyScope: a.alert.dependencyScope,
         description: a.alert.description,
+        cwes: a.alert.cwes,
         kev: a.kev,
         epss: a.epss,
         codeSnippets: a.codeSearch.snippets.map((s) => ({

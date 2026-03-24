@@ -69,12 +69,18 @@ export async function fetchAlertsForOrg(
       )?.value ??
       null;
 
-    const epssData = (
-      alert.security_advisory as unknown as {
-        epss?: Array<{ percentage: number }> | null;
-      }
-    ).epss;
-    const epss = epssData?.[0]?.percentage ?? null;
+    const advisory = alert.security_advisory as unknown as {
+      epss?: { percentage: number; percentile: number } | null;
+      cvss_severities?: {
+        cvss_v3?: { score: number; vector_string: string | null } | null;
+        cvss_v4?: { score: number; vector_string: string | null } | null;
+      };
+      cwes?: Array<{ cwe_id: string; name: string }>;
+    };
+
+    const epss = advisory.epss?.percentage ?? null;
+    const cvssV3Raw = advisory.cvss_severities?.cvss_v3;
+    const cvssV4Raw = advisory.cvss_severities?.cvss_v4;
 
     alerts.push({
       number: alert.number,
@@ -85,6 +91,23 @@ export async function fetchAlertsForOrg(
         alert.security_vulnerability.vulnerable_version_range,
       manifestPath: alert.dependency.manifest_path ?? "unknown",
       description: alert.security_advisory.description ?? "",
+      severity: alert.security_advisory.severity ?? "unknown",
+      cvssV3:
+        cvssV3Raw && cvssV3Raw.score > 0
+          ? { score: cvssV3Raw.score, vectorString: cvssV3Raw.vector_string }
+          : null,
+      cvssV4:
+        cvssV4Raw && cvssV4Raw.score > 0
+          ? { score: cvssV4Raw.score, vectorString: cvssV4Raw.vector_string }
+          : null,
+      cwes: (advisory.cwes ?? []).map((c) => ({
+        cweId: c.cwe_id,
+        name: c.name,
+      })),
+      firstPatchedVersion:
+        alert.security_vulnerability.first_patched_version?.identifier ?? null,
+      dependencyScope: (alert.dependency as unknown as { scope?: string }).scope ?? null,
+      htmlUrl: (alert as unknown as { html_url: string }).html_url,
     });
   }
 

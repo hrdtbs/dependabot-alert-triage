@@ -22,11 +22,18 @@ export function renderJson(
     analysisPrompt: buildAnalysisPrompt(epssThreshold),
     alerts: results.map((r) => ({
       number: r.alert.number,
+      htmlUrl: r.alert.htmlUrl,
       packageName: r.alert.packageName,
       cveId: r.alert.cveId,
+      severity: r.alert.severity,
+      cvssV3: r.alert.cvssV3,
+      cvssV4: r.alert.cvssV4,
       vulnerableVersion: r.alert.vulnerableVersion,
+      firstPatchedVersion: r.alert.firstPatchedVersion,
       manifestPath: r.alert.manifestPath,
+      dependencyScope: r.alert.dependencyScope,
       description: r.alert.description,
+      cwes: r.alert.cwes,
       kev: r.kev,
       epss: r.epss,
       codeSnippets: r.codeSearch.snippets.map((s) => ({

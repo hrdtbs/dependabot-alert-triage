@@ -1,3 +1,15 @@
+/** CVSS スコア情報 */
+export interface CvssInfo {
+  score: number;
+  vectorString: string | null;
+}
+
+/** CWE 情報 */
+export interface CweInfo {
+  cweId: string;
+  name: string;
+}
+
 /** Dependabotアラートから抽出した情報 */
 export interface AlertInfo {
   number: number;
@@ -6,7 +18,14 @@ export interface AlertInfo {
   vulnerableVersion: string;
   manifestPath: string;
   description: string;
+  severity: string;
+  cvssV3: CvssInfo | null;
+  cvssV4: CvssInfo | null;
   epss: number | null;
+  cwes: CweInfo[];
+  firstPatchedVersion: string | null;
+  dependencyScope: string | null;
+  htmlUrl: string;
 }
 
 /** KEV照合結果 */
