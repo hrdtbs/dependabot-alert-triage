@@ -8,7 +8,6 @@ import {
 import { fetchDependabotAlerts } from "../services/github.js";
 import { selectScope } from "../services/prompt.js";
 import { checkKev } from "../services/kev.js";
-import { fetchEpssScores } from "../services/epss.js";
 import { searchCodeMultiPackage } from "../services/code-search.js";
 import { renderTriageJson } from "../output/triage-json.js";
 import { renderTriageMarkdown } from "../output/triage-markdown.js";
@@ -110,20 +109,15 @@ export async function triageCommand(options: TriageOptions): Promise<void> {
     `Found ${totalAlerts} alert(s) across ${repoAlerts.length} repository(ies). Enriching data...\n`
   );
 
-  // Step 4: KEV + EPSS一括取得
+  // Step 4: KEV一括取得
   const allCveIds = repoAlerts
     .flatMap((r) => r.alerts.map((a) => a.cveId))
     .filter((id): id is string => id !== null);
 
   const uniqueCveIds = [...new Set(allCveIds)];
 
-  const [kevResults, epssResults] = await Promise.all([
-    checkKev(uniqueCveIds),
-    fetchEpssScores(uniqueCveIds),
-  ]);
-
+  const kevResults = await checkKev(uniqueCveIds);
   const kevMap = new Map(kevResults.map((r) => [r.cveId, r.inKev]));
-  const epssMap = new Map(epssResults.map((r) => [r.cveId, r.score]));
 
   // Step 5: コード検索（repo単位で並列）
   const limiter = pLimit(options.concurrency);
@@ -160,7 +154,7 @@ export async function triageCommand(options: TriageOptions): Promise<void> {
       const alerts: AlertReport[] = repoAlert.alerts.map((alert) => ({
         alert,
         kev: alert.cveId ? (kevMap.get(alert.cveId) ?? false) : false,
-        epss: alert.cveId ? (epssMap.get(alert.cveId) ?? null) : null,
+        epss: alert.epss,
         codeSearch: codeSearchMap.get(alert.packageName) ?? {
           packageName: alert.packageName,
           snippets: [],

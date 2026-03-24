@@ -6,18 +6,13 @@ export interface AlertInfo {
   vulnerableVersion: string;
   manifestPath: string;
   description: string;
+  epss: number | null;
 }
 
 /** KEV照合結果 */
 export interface KevResult {
   cveId: string;
   inKev: boolean;
-}
-
-/** EPSSスコア結果 */
-export interface EpssResult {
-  cveId: string;
-  score: number | null;
 }
 
 /** コード検索で抽出したスニペット */

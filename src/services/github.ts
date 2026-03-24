@@ -45,9 +45,17 @@ export async function fetchDependabotAlerts(
       )?.value ??
       null;
 
+    const epssData = (
+      alert.security_advisory as unknown as {
+        epss?: Array<{ percentage: number }> | null;
+      }
+    ).epss;
+    const epss = epssData?.[0]?.percentage ?? null;
+
     alerts.push({
       number: alert.number,
       cveId,
+      epss,
       packageName: alert.security_vulnerability.package.name,
       vulnerableVersion:
         alert.security_vulnerability.vulnerable_version_range,

@@ -15,6 +15,7 @@ function makeAlertReport(overrides?: Partial<AlertReport>): AlertReport {
       vulnerableVersion: "< 4.17.21",
       manifestPath: "package.json",
       description: "Command Injection via template function",
+      epss: 0.032,
     },
     kev: false,
     epss: 0.032,
